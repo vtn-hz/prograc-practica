@@ -5,16 +5,27 @@ public class Driver {
 	
 	private Address address;
 	
-	private String name;
+	private Bus bus;
 	
-	private boolean isDriving;
+	private String name;
 
 	public Driver(Category category, Address address, String name) {
 		super();
 		this.category = category;
 		this.address = address;
 		this.name = name;
-		this.isDriving = false;
+		this.bus = null;
+	}
+	
+	public Driver(Address address, String name) {
+		super();
+		this.address = address;
+		this.name = name;
+		this.bus = null;
+	}
+	
+	public void setCategory(Category category) {
+		this.category = category;
 	}
 	
 	public double getSalary () {
@@ -22,20 +33,29 @@ public class Driver {
 	}
 	
 	public boolean isDriving () {
-		return this.isDriving;
+		return this.bus != null;
 	}
 	
-	public void isDriving (boolean status) {
-		this.isDriving = status;
+	public void assignBus (Bus bus) {
+		this.bus = bus;
 	}	
+	
+	public void unassigngBus() {
+		this.bus = null;
+	}
+	
+	public Bus getAssignedBus ()  {
+		return this.bus;
+	}
 
 	@Override
 	public String toString() {
 		return "Driver [" +
 					"category=" + category + 
+					", salary=" + this.getSalary() + 
 					", address=" + address + 
-					", name=" + name + 
-					", isDriving=" + isDriving
+					", name=" + name +
+					", isDriving=" + this.isDriving() 
 				+ "]";
 	}
 	
