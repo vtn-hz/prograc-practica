@@ -25,7 +25,7 @@ public abstract class Personaje implements IMovible {
 		this.posicion = new Posicion();
 	}
 	
-	abstract boolean ataca(Personaje p) ; 
+	abstract public boolean ataca(Personaje p) ; 
 	
 	void recibeDanio(int cantidad) {
 		this.vitalidad = Math.max(this.vitalidad - cantidad, 0);
@@ -37,6 +37,10 @@ public abstract class Personaje implements IMovible {
 	
 	public int getVitalidad() {
 		return this.vitalidad;
+	}
+	
+	public void setVitalidad(int vitalidad) {
+		this.vitalidad = vitalidad;
 	}
 
 	@Override

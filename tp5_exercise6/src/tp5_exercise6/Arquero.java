@@ -1,6 +1,6 @@
 package tp5_exercise6;
 
-public class Arquero extends Personaje {
+public class Arquero extends Personaje implements IHechizable {
 	
 	static final int VIDA_INICIAL = 500;
 	
@@ -17,7 +17,7 @@ public class Arquero extends Personaje {
 	}
 
 	@Override
-	boolean ataca(Personaje p) {
+	public boolean ataca(Personaje p) {
 		boolean atackSuccess = false;
 		int danio = 5;
 		int distancia = 5;
@@ -38,6 +38,16 @@ public class Arquero extends Personaje {
 	
 	private boolean hasFlechas () {
 		return this.cantidadFlechas > 0;
+	}
+	
+	@Override
+	public void serBendecido() {
+		this.cantidadFlechas += 5;
+	}
+
+	@Override
+	public void serMaldito() {
+		this.cantidadFlechas = 0;
 	}
 
 	@Override

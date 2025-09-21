@@ -1,6 +1,6 @@
 package tp5_exercise6;
 
-public class Caballero extends Personaje {
+public class Caballero extends Personaje implements IHechizable {
 
 	static final int VIDA_INICIAL = 500;
 	
@@ -17,7 +17,7 @@ public class Caballero extends Personaje {
 	}
 
 	@Override
-	boolean ataca(Personaje p) {
+	public boolean ataca(Personaje p) {
 		boolean atackSuccess = false;
 		if (this.distancia(p) < DISTANCIA_ATAQUE) {
 			p.recibeDanio(DANIO);
@@ -25,6 +25,18 @@ public class Caballero extends Personaje {
 		}
 		
 		return atackSuccess;
+	}
+	
+	@Override
+	public void serBendecido() {
+		int vitalidad = (int)(1.25*this.getVitalidad());
+		this.setVitalidad(vitalidad);
+	}
+
+	@Override
+	public void serMaldito() {
+		int vitalidad = (int)(0.5*this.getVitalidad());
+		this.setVitalidad(vitalidad);
 	}
 
 	@Override

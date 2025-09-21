@@ -1,6 +1,8 @@
 package tp5_exercise6;
 
-public class Guerrero extends Personaje {
+import java.lang.Math;
+
+public class Guerrero extends Personaje implements IHechizable {
 
 	static final int VIDA_INICIAL = 800;
 	
@@ -21,7 +23,7 @@ public class Guerrero extends Personaje {
 	}
 
 	@Override
-	boolean ataca(Personaje p) {
+	public boolean ataca(Personaje p) {
 		boolean atackSuccess = false;
 		if (this.distancia(p) < DISTANCIA_ATAQUE) {
 			p.recibeDanio(DANIO);
@@ -38,6 +40,19 @@ public class Guerrero extends Personaje {
 		
 		super.recibeDanio(danioRestante);
 	}
+	
+	@Override
+	public void serBendecido() {
+		this.armadura += 200;
+	}
+
+	@Override
+	public void serMaldito() {
+		this.armadura -= 200;
+		this.armadura = Math.max(this.armadura, 0);
+	}
+
+	
 
 	@Override
 	public String toString() {
