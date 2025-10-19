@@ -1,30 +1,28 @@
-// Archivo: buscaminas/controller/GameController.java
 package buscaminas.controller;
 
-import java.awt.Component;
+import buscaminas.model.Grid;
+import buscaminas.model.GridAlgorithm; // Usamos tu clase
+import buscaminas.view.Window;
+
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-
-import javax.swing.JButton;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
-
-import buscaminas.model.Grid;
-import buscaminas.model.GridAlgorithm;
-import buscaminas.view.Window;
-
-// ... (las otras importaciones no cambian)
 
 public class GameController extends MouseAdapter implements ActionListener, IViewConstants {
 
     private Grid model;
     private final Window view;
 
+    /**
+     * Constructor que recibe el modelo y la vista para conectarlos.
+     */
     public GameController(Window view) {
         this.view = view;
         setListeners();
+        updateViewWithInitialModel();
     }
 
     private void setListeners() {
@@ -32,6 +30,18 @@ public class GameController extends MouseAdapter implements ActionListener, IVie
         this.view.getConfigPanel().addPlayButtonListener(this);
     }
 
+    /**
+     * Dibuja la grilla en la vista basándose en el estado del modelo inicial.
+     */
+    private void updateViewWithInitialModel() {
+        if (model == null || model.getGridFields() == null) return;
+        int width = model.getGridFields().length;
+        int height = model.getGridFields()[0].length;
+        
+        view.getGridPanel().initializeGrid(width, height, this);
+        view.pack();
+    }
+    
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getActionCommand().equals(PLAY_BUTTON_COMMAND)) {
@@ -39,10 +49,11 @@ public class GameController extends MouseAdapter implements ActionListener, IVie
         }
     }
 
+    /**
+     * Lógica para crear una nueva partida al pulsar "Jugar".
+     */
     private void handlePlayAction() {
         try {
-            // >>> CAMBIO CLAVE AQUÍ <<<
-            // Pedimos los datos a la vista usando los identificadores de la interfaz.
             String xText = view.getConfigPanel().getFieldText(FIELD_DIMENSION_X);
             String yText = view.getConfigPanel().getFieldText(FIELD_DIMENSION_Y);
             String minesText = view.getConfigPanel().getFieldText(FIELD_MINES_AMOUNT);
@@ -57,6 +68,7 @@ public class GameController extends MouseAdapter implements ActionListener, IVie
             }
 
             this.model = new Grid(x, y, mines);
+            // Usamos tu clase GridAlgorithm directamente
             this.model.setAlgorithm(new GridAlgorithm());
             this.model.populateGrid();
 
@@ -68,61 +80,85 @@ public class GameController extends MouseAdapter implements ActionListener, IVie
         }
     }
     
-    // ... El resto de la clase (mousePressed, updateButton, etc.) no necesita cambios ...
-    // ... pero podemos usar las nuevas constantes para los íconos.
-    
     @Override
     public void mousePressed(MouseEvent e) {
         if (model == null) return;
 
-        // >>> AQUÍ SE OBTIENE EL BOTÓN <<<
-        // e.getSource() devuelve el objeto que disparó el evento.
-        // Lo convertimos (cast) a JButton porque sabemos que solo los botones de la grilla
-        // tienen este listener.
         JButton button = (JButton) e.getSource();
+        if (!button.isEnabled()) return; // No hacer nada si el botón ya fue revelado
 
         String[] coords = button.getActionCommand().split(",");
         int i = Integer.parseInt(coords[0]);
         int j = Integer.parseInt(coords[1]);
 
-        if (!button.isEnabled()) {
-            return;
+        // --- LÓGICA DE CLIC IZQUIERDO COMPLETA ---
+        if (SwingUtilities.isLeftMouseButton(e) && button.getText().isEmpty()) {
+            try {
+                // El modelo intenta mostrar la celda. Si es una mina, lanzará una excepción.
+                model.showField(i, j);
+                updateButton(button, i, j); // Actualiza la vista si no es una mina
+            } catch (Exception ex) {
+                // ¡PERDISTE! La excepción significa que era una mina.
+                revealAllMines();
+                JOptionPane.showMessageDialog(view, "¡Boom! Has encontrado una mina.", "¡Perdiste!", JOptionPane.INFORMATION_MESSAGE);
+                disableGrid();
+            }
         }
-
-        // Clic Izquierdo: Revelar celda
-        if (SwingUtilities.isLeftMouseButton(e)) {
-            // ...
-        }
-        // Clic Derecho: Marcar/Desmarcar bandera
+        // --- LÓGICA DE CLIC DERECHO COMPLETA ---
         else if (SwingUtilities.isRightMouseButton(e)) {
+            // Si ya tiene una bandera, se la quita
             if (button.getText().equals(FLAG_ICON)) {
                 model.unflagField(i, j);
                 button.setText("");
-            } else if (button.getText().isEmpty()) {
+            } 
+            // Si está vacía, le pone una bandera
+            else if (button.getText().isEmpty()) {
                 model.flagField(i, j);
                 button.setText(FLAG_ICON);
             }
 
+            // Después de marcar/desmarcar, comprueba si ganaste
             if (model.isWin()) {
-                this.revealAllMines();
+                // ¡GANASTE!
+                revealAllMines();
+                JOptionPane.showMessageDialog(view, "¡Felicidades! Has encontrado todas las minas.", "¡Ganaste!", JOptionPane.PLAIN_MESSAGE);
+                disableGrid();
             }
         }
     }
     
-    private void revealAllMines() {
-        // Obtenemos todos los componentes del GridPanel y los recorremos uno por uno.
+    /**
+     * Actualiza la apariencia de un botón después de ser revelado.
+     */
+    private void updateButton(JButton button, int i, int j) {
+        button.setEnabled(false); // Deshabilita el botón
+        int minasCercanas = model.getMinasCercanas(i, j);
+        if (minasCercanas > 0) {
+            button.setText(String.valueOf(minasCercanas));
+        }
+    }
+    
+    /**
+     * Deshabilita toda la grilla al final del juego.
+     */
+    private void disableGrid() {
         for (Component component : view.getGridPanel().getComponents()) {
+            component.setEnabled(false);
+        }
+    }
 
-            // >>> AQUÍ SE OBTIENE CADA BOTÓN, EN CADA VUELTA DEL BUCLE <<<
-            // Cada 'component' del panel se convierte (cast) a JButton.
+    /**
+     * Muestra la ubicación de todas las minas al final del juego.
+     */
+    private void revealAllMines() {
+        for (Component component : view.getGridPanel().getComponents()) {
             JButton button = (JButton) component;
-            
             String[] coords = button.getActionCommand().split(",");
             int i = Integer.parseInt(coords[0]);
             int j = Integer.parseInt(coords[1]);
-
             if (model.isMina(i, j)) {
-                button.setText(MINE_ICON); // Usamos la variable 'button' de esta iteración
+                // Si la celda es una mina, la muestra
+                button.setText(MINE_ICON);
             }
         }
     }

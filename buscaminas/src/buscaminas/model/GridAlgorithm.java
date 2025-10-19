@@ -49,15 +49,15 @@ public class GridAlgorithm {
 			{0,-1}, {-1,-1} 
 		};
 		
-		for (int k = 0 ; i < 8 ; i++) {
+		for (int k = 0 ; k < 8 ; k++) {
 			int[] current = posibilities[k];
 			
 			int posx = j + current[0];
 			int posy = i + current[1];
 			
-			if ( 0 <= posx && posx <= dimx ) 
-				if ( 0 <= posy && posy <=  dimy )
-					amount += gridFields[i][j].isMina() ? 1 : 0;
+			if ( 0 <= posx && posx < dimx )
+			    if ( 0 <= posy && posy < dimy )	
+					amount += gridFields[posy][posx].isMina() ? 1 : 0;
 		}
 		
 		return amount;
