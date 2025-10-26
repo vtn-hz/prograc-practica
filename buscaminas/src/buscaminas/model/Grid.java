@@ -65,6 +65,11 @@ public class Grid {
 		this.gridFields[i][j].setStatus(ItemGrid.HIDDEN);
 	}
 	
+	public void showGridNeighbors(int i, int j) 
+	{
+		this.algorithm.showGridNeighbors(gridFields, i, j);
+	}
+	
 	public boolean isWin() 
 	{
 		return this.foundedMinesAmount == this.mineAmount;
@@ -72,6 +77,16 @@ public class Grid {
 
 	public void setAlgorithm(GridAlgorithm algorithm) {
 		this.algorithm = algorithm;
+	}
+	
+	public boolean isShown(int i, int j) 
+	{
+		return this.gridFields[i][j].getStatus() == ItemGrid.SHOWED;
+	}
+	
+	public boolean isFlagged(int i, int j) 
+	{
+		return this.gridFields[i][j].getStatus() == ItemGrid.FLAGED;
 	}
 
 }

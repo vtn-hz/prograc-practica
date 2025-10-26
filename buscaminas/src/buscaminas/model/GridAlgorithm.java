@@ -1,5 +1,7 @@
 package buscaminas.model;
 
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Random;
 
 import buscaminas.model.itemgrid.Ground;
@@ -44,16 +46,17 @@ public class GridAlgorithm {
 		int amount = 0;
 		
 		int posibilities[][] = {
-			{-1,0}, {-1, 1}, {0, 1},
-			{1, 1}, { 1, 0}, {1,-1},
-			{0,-1}, {-1,-1} 
+			{-1,-1}, {-1,0}, {-1, 1}, 
+			{0, 1}, {1, 1}, { 1, 0}, 
+			{1,-1}, {0,-1}
 		};
 		
 		for (int k = 0 ; k < 8 ; k++) {
 			int[] current = posibilities[k];
 			
-			int posx = j + current[0];
-			int posy = i + current[1];
+			int posy = i + current[0];
+			int posx = j + current[1];
+			
 			
 			if ( 0 <= posx && posx < dimx )
 			    if ( 0 <= posy && posy < dimy )	
@@ -61,5 +64,52 @@ public class GridAlgorithm {
 		}
 		
 		return amount;
+	}
+	
+	public void showGridNeighbors(ItemGrid[][] gridFields, int i, int j) {
+	
+	    int posibilities[][] = {
+	        {-1, -1}, {-1, 0}, {-1, 1},
+	        {0, 1},   {1, 1},  {1, 0},
+	        {1, -1},  {0, -1}
+	    };
+
+	    int rows = gridFields.length;
+	    int cols = gridFields[0].length; 
+	    
+	    Queue<int[]> queue = new LinkedList<>();
+
+	    gridFields[i][j].setStatus(ItemGrid.SHOWED);
+	    int minas = getMinasCercanas(gridFields, i, j); 
+
+	    if (minas > 0) {
+	        return;
+	    }
+
+	    queue.add(new int[]{i, j});
+	    while (!queue.isEmpty()) {
+	        int[] current = queue.poll();
+	        int r = current[0];
+	        int c = current[1]; 
+
+	        for (int[] p : posibilities) {
+	            int nr = r + p[0];
+	            int nc = c + p[1]; 
+
+	            if (nr < 0 || nr >= rows || nc < 0 || nc >= cols) {
+	                continue; 
+	            }
+
+	            ItemGrid neighbor = gridFields[nr][nc];
+	            if (neighbor.getStatus() == ItemGrid.SHOWED) {
+	                continue;
+	            }
+
+	            neighbor.setStatus(ItemGrid.SHOWED);
+	            if (getMinasCercanas(gridFields, nr, nc) == 0) {
+	                queue.add(new int[]{nr, nc});
+	            }
+	        }
+	    }
 	}
 }
