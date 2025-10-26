@@ -1,51 +1,95 @@
-// Archivo: buscaminas/view/Window.java
 package buscaminas.view;
 
+import buscaminas.controller.IView; // 1. Importar la interfaz
+import buscaminas.model.Grid;
 import java.awt.BorderLayout;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseListener;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane; // 2. El único lugar donde se importa JOptionPane
 
 /**
- * La ventana principal del juego Buscaminas.
- * Contiene el panel de configuración y el panel de la grilla del juego.
- * Siguiendo el patrón MVC, esta clase es parte de la Vista.
+ * Ventana principal del juego.
+ * Implementa la interfaz IView y actúa como el punto de entrada central
+ * para que el Controlador interactúe con la Vista.
+ * Delega tareas específicas a ConfigPanel y GridPanel.
  */
-public class Window extends JFrame {
+public class Window extends JFrame implements IView {
 
-    private ConfigPanel configPanel;
-    private GridPanel gridPanel;
+    private final ConfigPanel configPanel;
+    private final GridPanel gridPanel;
 
     public Window() {
-        // --- CONFIGURACIÓN BÁSICA DE LA VENTANA ---
-        setTitle("Buscaminas");
+        setTitle("Buscaminas (Arquitectura MVC)");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
+        setLayout(new BorderLayout(10, 10)); // Un poco de espacio
 
-        // --- INICIALIZACIÓN DE PANELES ---
+        // Inicializar los componentes de la vista
         configPanel = new ConfigPanel();
         gridPanel = new GridPanel();
 
-        // --- AÑADIR PANELES A LA VENTANA ---
-        // El panel de configuración irá a la izquierda (OESTE)
+        // Añadir componentes al frame
         add(configPanel, BorderLayout.WEST);
-        
-        // La grilla del juego ocupará el espacio central
         add(gridPanel, BorderLayout.CENTER);
 
-        // --- AJUSTE Y VISIBILIDAD ---
-        pack(); // Ajusta el tamaño de la ventana al de sus componentes
-        setLocationRelativeTo(null); // Centra la ventana en la pantalla
+        pack(); // Ajustar tamaño inicial
+        setLocationRelativeTo(null); // Centrar en pantalla
         setVisible(true);
     }
 
-    // --- MÉTODOS PARA EL CONTROLADOR ---
-    // El controlador necesitará acceso a los paneles para poder
-    // configurar los listeners y actualizar la vista.
+    // --- Implementación de IView (Delegación a ConfigPanel) ---
 
-    public ConfigPanel getConfigPanel() {
-        return configPanel;
+    @Override
+    public void addPlayButtonListener(ActionListener listener) {
+        configPanel.addPlayButtonListener(listener);
     }
 
-    public GridPanel getGridPanel() {
-        return gridPanel;
+    @Override
+    public String getConfigFieldText(String fieldId) {
+        return configPanel.getFieldText(fieldId);
+    }
+
+    // --- Implementación de IView (Delegación a GridPanel) ---
+
+    @Override
+    public void initializeGrid(int width, int height, MouseListener cellMouseListener) {
+        gridPanel.initializeGrid(width, height, cellMouseListener);
+    }
+
+    @Override
+    public void updateGrid(Grid model) {
+        gridPanel.updateGridState(model);
+    }
+
+    @Override
+    public void disableGrid() {
+        gridPanel.disableGridState();
+    }
+
+    @Override
+    public void revealAllMines(Grid model) {
+        gridPanel.revealAllMinesState(model);
+    }
+
+    // --- Implementación de IView (Lógica propia de la Ventana) ---
+
+    @Override
+    public void packView() {
+        this.pack(); // Ajusta el tamaño del JFrame
+    }
+
+    @Override
+    public void showErrorMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    @Override
+    public void showWinMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "¡Ganaste!", JOptionPane.PLAIN_MESSAGE);
+    }
+
+    @Override
+    public void showLossMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "¡Perdiste!", JOptionPane.INFORMATION_MESSAGE);
     }
 }

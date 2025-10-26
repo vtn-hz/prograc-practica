@@ -1,7 +1,6 @@
-// Archivo: buscaminas/view/ConfigPanel.java
 package buscaminas.view;
 
-import buscaminas.controller.IViewConstants; // Importamos la interfaz
+import buscaminas.controller.IView; // 1. Importar la nueva interfaz
 import java.awt.GridLayout;
 import java.awt.event.ActionListener;
 import java.util.HashMap;
@@ -25,20 +24,22 @@ public class ConfigPanel extends JPanel {
         // Creamos los componentes y los guardamos en el Map con su clave
         add(new JLabel("Dimensión X (ancho):"));
         JTextField xField = new JTextField("10");
-        textFields.put(IViewConstants.FIELD_DIMENSION_X, xField);
+        textFields.put(IView.FIELD_DIMENSION_X, xField); // 2. Usar IView
         add(xField);
 
         add(new JLabel("Dimensión Y (alto):"));
         JTextField yField = new JTextField("10");
-        textFields.put(IViewConstants.FIELD_DIMENSION_Y, yField);
+        textFields.put(IView.FIELD_DIMENSION_Y, yField); // 2. Usar IView
         add(yField);
 
         add(new JLabel("Cantidad de Minas:"));
         JTextField minesField = new JTextField("10");
-        textFields.put(IViewConstants.FIELD_MINES_AMOUNT, minesField);
+        textFields.put(IView.FIELD_MINES_AMOUNT, minesField); // 2. Usar IView
         add(minesField);
 
         playButton = new JButton("Jugar");
+        // 3. La vista (este panel) es ahora responsable de setear el ActionCommand
+        playButton.setActionCommand(IView.PLAY_BUTTON_COMMAND); 
         
         add(new JLabel());
         add(playButton);
@@ -46,7 +47,7 @@ public class ConfigPanel extends JPanel {
     
     /**
      * Método genérico para que el controlador obtenga el texto de cualquier campo.
-     * @param fieldIdentifier La clave del campo, definida en IViewConstants.
+     * @param fieldIdentifier La clave del campo, definida en IView. // 5. Javadoc actualizado
      * @return El texto del campo solicitado, o null si el identificador es inválido.
      */
     public String getFieldText(String fieldIdentifier) {
@@ -55,18 +56,14 @@ public class ConfigPanel extends JPanel {
     }
 
     /**
-     * El controlador llama a este método para añadir su lógica al botón "Jugar".
+     * El controlador llama a este método (a través de la Window) 
+     * para añadir su lógica al botón "Jugar".
      * @param listener El ActionListener que definirá la lógica del juego.
      */
     public void addPlayButtonListener(ActionListener listener) {
         this.playButton.addActionListener(listener);
     }
     
-    /**
-     * Devuelve el botón para que el controlador pueda asignarle un ActionCommand.
-     * @return el botón de Jugar.
-     */
-    public JButton getPlayButton() {
-        return playButton;
-    }
+    // 4. El método getPlayButton() se elimina. 
+    // Ya no es necesario y fomenta un mejor encapsulamiento.
 }

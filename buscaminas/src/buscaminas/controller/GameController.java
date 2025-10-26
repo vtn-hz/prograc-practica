@@ -2,180 +2,124 @@ package buscaminas.controller;
 
 import buscaminas.model.Grid;
 import buscaminas.model.GridBuilder;
-import buscaminas.view.Window;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+// Importaciones de Swing eliminadas (JOptionPane, Color, Component, SwingUtilities)
+import javax.swing.JButton; // Necesario solo para el casting del event source
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
-public class GameController extends MouseAdapter implements ActionListener, IViewConstants {
+public class GameController extends MouseAdapter implements ActionListener {
 
     private Grid model;
     private GridBuilder gridBuilder;
-    private final Window view;
+    private final IView view; // Depende de la interfaz, no de la clase Window
 
-    public GameController(Window view, GridBuilder gridBuilder) {
+    public GameController(IView view, GridBuilder gridBuilder) {
         this.view = view;
         this.gridBuilder = gridBuilder;
         setListeners();
     }
 
     private void setListeners() {
-        this.view.getConfigPanel().getPlayButton().setActionCommand(PLAY_BUTTON_COMMAND);
-        this.view.getConfigPanel().addPlayButtonListener(this);
+        // La vista es responsable de poner el ActionCommand en su botón.
+        // El controlador solo se registra.
+        this.view.addPlayButtonListener(this);
     }
     
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getActionCommand().equals(PLAY_BUTTON_COMMAND)) {
+        // Accedemos a la constante estática desde la interfaz
+        if (e.getActionCommand().equals(IView.PLAY_BUTTON_COMMAND)) {
             handlePlayAction();
         }
     }
 
     private void handlePlayAction() {
         try {
-            String xText = view.getConfigPanel().getFieldText(FIELD_DIMENSION_X);
-            String yText = view.getConfigPanel().getFieldText(FIELD_DIMENSION_Y);
-            String minesText = view.getConfigPanel().getFieldText(FIELD_MINES_AMOUNT);
+            // Obtenemos datos a través de la interfaz
+            String xText = view.getConfigFieldText(IView.FIELD_DIMENSION_X);
+            String yText = view.getConfigFieldText(IView.FIELD_DIMENSION_Y);
+            String minesText = view.getConfigFieldText(IView.FIELD_MINES_AMOUNT);
 
             int x = Integer.parseInt(xText);
             int y = Integer.parseInt(yText);
             int mines = Integer.parseInt(minesText);
 
             if (x <= 0 || y <= 0 || mines <= 0 || mines >= x * y) {
-                JOptionPane.showMessageDialog(view, "Valores inválidos.", "Error", JOptionPane.ERROR_MESSAGE);
+                // Delegamos los mensajes a la vista
+                view.showErrorMessage("Valores inválidos.");
                 return;
             }
 
             this.model = this.gridBuilder.build(x, y, mines);
-            this.view.getGridPanel().initializeGrid(x, y, this);
-            this.view.pack();
+            // Comandamos a la vista
+            this.view.initializeGrid(x, y, this);
+            this.view.packView();
             
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(view, "Por favor, ingrese solo números.", "Error de Formato", JOptionPane.ERROR_MESSAGE);
+            // Delegamos los mensajes a la vista
+            view.showErrorMessage("Por favor, ingrese solo números.");
         }
     }
 
     @Override
     public void mousePressed(MouseEvent e) {
+        // El casting es la única dependencia de Swing (JButton) necesaria
+        // para recuperar las coordenadas asociadas al componente.
         JButton button = (JButton) e.getSource();
         int[] coords = (int[]) button.getClientProperty("coords");
         int i = coords[0];
         int j = coords[1];
 
         // --- CLICK IZQUIERDO ---
-        if (SwingUtilities.isLeftMouseButton(e)) {
+        // Reemplazamos SwingUtilities por e.getButton()
+        if (e.getButton() == MouseEvent.BUTTON1) {
             if (model.isShown(i, j) || model.isFlagged(i, j)) return;
 
             try {
-                // 1. Revelar la casilla en el modelo
                 model.showField(i, j);
-
-                // 2. SI ES CERO, LLAMAR AL BFS (showGridNeighbors)
                 if (model.getMinasCercanas(i, j) == 0) {
-                    model.showGridNeighbors(i, j); // Llamada al BFS en el modelo
+                    model.showGridNeighbors(i, j);
                 }
 
-                // 3. Actualizar TODA la grilla
-                updateGridView(); 
+                // Delegamos la actualización de la vista
+                view.updateGrid(model); 
 
             } catch (Exception ex) {
-                // Era una mina
-                button.setText(MINE_ICON);
-                revealAllMines();
-                JOptionPane.showMessageDialog(view, "💣 ¡Boom! Has encontrado una mina.", "¡Perdiste!", JOptionPane.INFORMATION_MESSAGE);
-                disableGrid();
+                // La vista es responsable de revelar las minas y mostrar el mensaje
+                view.revealAllMines(model);
+                view.showLossMessage("💣 ¡Boom! Has encontrado una mina.");
+                view.disableGrid();
             }
         }
 
         // --- CLICK DERECHO ---
-        else if (SwingUtilities.isRightMouseButton(e)) {
-            System.out.println("sone ma sdada");
-            // 1. No hacer nada si la celda ya está mostrada
+        // Reemplazamos SwingUtilities por e.getButton()
+        else if (e.getButton() == MouseEvent.BUTTON3) {
             if (model.isShown(i, j)) {
                 return;
             }
 
-            // 2. Actualizar solo el modelo
-            // (Asumo que tu modelo tiene 'isFlagged')
             if (model.isFlagged(i, j)) {
                 model.unflagField(i, j);
             } else {
                 model.flagField(i, j);
-                
             }
 
-            // 3. Llamar a la actualización de la vista
-            updateGridView();
+            // Delegamos la actualización de la vista
+            view.updateGrid(model);
 
-            // 4. Chequear victoria
             if (model.isWin()) {
-                revealAllMines();
-                JOptionPane.showMessageDialog(view, "🎉 ¡Felicidades! Has ganado.", "¡Ganaste!", JOptionPane.PLAIN_MESSAGE);
-                disableGrid();
+                // La vista es responsable de revelar las minas y mostrar el mensaje
+                view.revealAllMines(model);
+                view.showWinMessage("🎉 ¡Felicidades! Has ganado.");
+                view.disableGrid();
             }
         }
     }
     
-    /**
-     * Sincroniza TODOS los botones de la vista con el estado actual del modelo.
-     */
-    private void updateGridView() {
-        // Itera sobre todos los componentes (JButtons) en el GridPanel
-        for (Component component : view.getGridPanel().getComponents()) {
-            JButton button = (JButton) component;
-            int[] coords = (int[]) button.getClientProperty("coords");
-            int i = coords[0];
-            int j = coords[1];
-
-            // (Asumo que tu 'model' tiene un método 'isShown(i, j)')
-            if (model.isShown(i, j)) {
-                
-                // --- PARTE 1: CELDA MOSTRADA ---
-                button.setOpaque(true);
-                button.setBackground(Color.GRAY);
-                button.setForeground(Color.BLACK);
-                button.setBorderPainted(false);
-                button.setMargin(new java.awt.Insets(0, 0, 0, 0));
-                
-                button.setEnabled(false); // Deshabilitar
-
-                int minasCercanas = model.getMinasCercanas(i, j);
-                button.setText(minasCercanas > 0 ? String.valueOf(minasCercanas) : "");
-                
-            } else {
-                
-                // --- PARTE 2: CELDA NO MOSTRADA ---
-                
-                button.setEnabled(true);
-                button.setBackground(null); // Usar color por defecto
-
-                // Dibujar la bandera si el modelo dice que está marcada
-                // (Asumo que tu 'model' tiene 'isFlagged')
-                if (model.isFlagged(i, j)) {
-                    button.setText(FLAG_ICON); // 🚩
-                } else {
-                    button.setText(""); // Sin bandera
-                }
-            }
-        }
-    }
-
-    private void disableGrid() {
-        for (Component component : view.getGridPanel().getComponents()) {
-            component.setEnabled(false);
-        }
-    }
-
-    private void revealAllMines() {
-        for (Component component : view.getGridPanel().getComponents()) {
-            JButton button = (JButton) component;
-            int[] coords = (int[]) button.getClientProperty("coords");
-            int i = coords[0];
-            int j = coords[1];
-            if (model.isMina(i, j)) {
-                button.setText(MINE_ICON);
-            }
-        }
-    }
+    // Los métodos updateGridView(), disableGrid() y revealAllMines()
+    // han sido eliminados del controlador.
 }
